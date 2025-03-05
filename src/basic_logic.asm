@@ -7,30 +7,33 @@ floorReached: .asciiz "You have reached your desired floor "
 .text
 .globl main
 main:
-li $v0, 4
-la $a0, targetFloor
-syscall
-#Reading the floor
-li $v0, 5
-syscall
-move $t0, $v0
-
-li $v0, 4
-la $a0, currentFloor
-#Reading the floor
-li $v0, 5
-syscall
-move $t1, $v0
-#moving the elevator accordingly
-blt $t0, $t1, moving_up
-bgt $t0, $t1, moving_down
-moving_up:
-	addi $t0, $t0, 1 #incrementing the floor
 	li $v0, 4
-	la $a0, movingUp #printing out the floor message
-	syscall #issuing a systemcall
+	la $a0, targetFloor
+	syscall
+	#Reading the floor
+	li $v0, 5
+	syscall
+	move $t0, $v0
 
-j reached #printing out the reached floor 
+	li $v0, 4
+	la $a0, currentFloor
+	syscall
+	#Reading the floor
+	li $v0, 5
+	syscall
+	move $t1, $v0
+	
+	#moving the elevator accordingly
+	blt $t0, $t1, moving_up
+	bgt $t0, $t1, moving_down
+
+moving_up:
+	addi $t0, $t0, 1 			# incrementing the floor
+	li $v0, 4
+	la $a0, movingUp 			# printing out the floor message
+	syscall 				# issuing a systemcall
+
+	j reached 				# printing out the reached floor 
 
 moving_down:
 	addi $t0, $t0, -1
@@ -38,7 +41,7 @@ moving_down:
 	la $a0, movingDown
 	syscall
 
-j reached
+	j reached
 
 reached:
 	#dale's dequeue function.
