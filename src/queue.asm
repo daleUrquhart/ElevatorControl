@@ -23,7 +23,7 @@ syscall
 move $t1, $v0
 #moving the elevator accordingly
 blt $t0, $t1, moving_up
-bgt,$t0, $t1, moving_down
+bgt $t0, $t1, moving_down
 moving_up:
 	addi $t0, $t0, 1 #incrementing the floor
 	li $v0, 4
