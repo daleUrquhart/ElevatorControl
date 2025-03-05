@@ -54,4 +54,4 @@ reached:
 #	 li $v0, 10
 #	 syscall
 
-s
+
