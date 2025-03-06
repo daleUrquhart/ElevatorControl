@@ -13,8 +13,6 @@ stopped: .asciiz "The elevator has been stopped. Do you want to restart the elev
 #	jal sound_alarm
 	
 sound_alarm:
-
-	# TODO: need to add stack pointer adjustments here
 	move $t1, $a0				# Move argument to temporary register
 	li $t0, 0				# Initialize count = 0
 	li $v0, 4 				# Load system call code for print_string
