@@ -1,56 +1,40 @@
-.data 
-targetFloor: .asciiz "Enter the desired floor you want to reach to: "
-currentFloor: .asciiz "Enter the floor you're currently on: "
-movingUp: .asciiz "You are moving up to : "
-movingDown: .asciiz "You are moving down to : "
-floorReached: .asciiz "You have reached your desired floor "
+.data
+directionPrompt .asciiz "Press 'u' for UP and 'd' for DOWN?"
+currentFloor .asciiz "Enter the current floor you're on. "
+movingUp .asciiz "Going up : "
+movingDown .asciiz "Going down : "
+reachedFloor .asciiz "Arrived floor "
+newline .asciiz "\n"
 
+.include "main.asm"
 .text
-.globl main
-main:
-li $v0, 4
-la $a0, targetFloor
-syscall
-#Reading the floor
-li $v0, 5
-syscall
-move $t0, $v0
 
-li $v0, 4
-la $a0, currentFloor
-#Reading the floor
-li $v0, 5
-syscall
-move $t1, $v0
-#moving the elevator accordingly
-blt $t0, $t1, moving_up
-bgt $t0, $t1, moving_down
+beq $a0, 76, moving_up			# If input is equal to 'u', initiates moving_up function
+beq $a0, 64, moving_down		# If input is equal to 'd', initiates moving_down function
+
+li $v0, 4				# Initializes the prompt for the current floor
+la $a0, currentFloor			# Loads the user's input to the register
+syscall					# Execute the system call
+li $v0, 5				
+syscall					# Execute the system call
+move $t0, $v0				# Moves the input to a temporary variable
+
 moving_up:
-	addi $t0, $t0, 1 #incrementing the floor
-	li $v0, 4
-	la $a0, movingUp #printing out what floor you're going up
-	syscall #issuing a systemcall
+addi $a0, $a0, 1 			# Increments the current floor to reach the target floor
+li $v0, 4				# Sets the value to the incremented floor			
+la $a0, movingUp			# Shows the function of the floor getting incremented as it goes up
+syscall					# Executes the system call
+j moving_up
 
-j reached #printing out the reached floor 
+  
+moving_down: 
+addi $a0, $a0, -1			# Decrements the current floor to reach the target floor
+li $v0, 4				# Sets the value to the decremented floor			
+la $a0, movingDown			# Shows the function of the floor getting decremented as it goes up
+syscall					# Executes the system call
 
-moving_down:
-	addi $t0, $t0, -1 #decrementing the floor 
-	li $v0, 4
-	la $a0, movingDown #printing out what floor you're going down
-	syscall
+j moving_down
 
-j reached
-
-reached:
-	#dale's dequeue function.
-	
+reached: 
 
 
-
-	
-#Exit:
-#	 li $v0, 1
-#	 move $a0, $t2
-#	 syscall
-#	 li $v0, 10
-#	 syscall
