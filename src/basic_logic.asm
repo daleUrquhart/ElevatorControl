@@ -1,56 +1,90 @@
 .data 
-targetFloor: .asciiz "Enter the desired floor you want to reach to: "
-currentFloor: .asciiz "Enter the floor you're currently on: "
-movingUp: .asciiz "You are moving up to : "
-movingDown: .asciiz "You are moving down to : "
-floorReached: .asciiz "You have reached your desired floor "
-
+targetFloor: .asciiz "Enter the desired floor (0-5); press 'S' to stop: "
+currentFloor: .asciiz "You are on floor "
+nextFloor: .asciiz "You are moving to floor "
+#movingDown: .asciiz "You are moving down to: "
+floorReached: .asciiz "You have reached your floor "
+continue: .asciiz "Enter a floor number (0-5) if you wish to continue. Enter 'S' if you wish to stop: "
+newline: .asciiz "\n"
+.include "queue.asm"
+.include "emergency_measures.asm"
+.include "main.asm"
 .text
-.globl main
-main:
-li $v0, 4
-la $a0, targetFloor
-syscall
-#Reading the floor
-li $v0, 5
-syscall
-move $t0, $v0
-
-li $v0, 4
-la $a0, currentFloor
-#Reading the floor
-li $v0, 5
-syscall
-move $t1, $v0
-#moving the elevator accordingly
-blt $t0, $t1, moving_up
-bgt $t0, $t1, moving_down
+	
 moving_up:
-	addi $t0, $t0, 1 #incrementing the floor
-	li $v0, 4
-	la $a0, movingUp #printing out what floor you're going up
-	syscall #issuing a systemcall
-
-j reached #printing out the reached floor 
+	jal deq					# Retrieve the next desired floor
+	move $t0, $v0				# Move result to $t0
+	li $v0, 4				# Load system call code for print_string
+	la $a0, currentFloor 			# Printing out what floor you're on
+	syscall
+	li $v0, 1
+ 	move $a0, $t1				# Print current floor number
+ 	syscall 			
+	li $v0, 4 				# Load system call code for print_string
+	la $a0, newline     			# Load address of the string
+	syscall					# Execute the system call	
+	li $v0, 4				# Load system call code for print_string
+	la $a0, nextFloor 			# Printing out what floor you're going to
+	syscall
+	li $v0, 1
+ 	move $a0, $t0				# Print next floor number				
+ 	syscall 					
+    Loop1:
+	beq $t1, $t0, reached			# Branch to reached if current floor equals desired floor
+	addi $t1, $t1, 1 			# Increment the current floor
+	li $v0, 4				# Load system call code for print_string
+	la $a0, currentFloor 			# Printing out what floor you're on
+	syscall
+	li $v0, 1
+ 	move $a0, $t1				# Print current floor number
+ 	syscall
+ 	li $v0, 4 				# Load system call code for print_string
+	la $a0, newline     			# Load address of the string
+	syscall
+	j Loop1			 
 
 moving_down:
-	addi $t0, $t0, -1 #decrementing the floor 
-	li $v0, 4
-	la $a0, movingDown #printing out what floor you're going down
+	jal deq					# Retrieve the next desired floor
+	move $t0, $v0				# Move result to $t0
+	li $v0, 4				# Load system call code for print_string
+	la $a0, currentFloor 			# Printing out what floor you're on
 	syscall
-
-j reached
-
+	li $v0, 1
+ 	move $a0, $t1				# Print current floor number
+ 	syscall 			
+	li $v0, 4 				# Load system call code for print_string
+	la $a0, newline     			# Load address of the string
+	syscall					# Execute the system call	
+	li $v0, 4				# Load system call code for print_string
+	la $a0, nextFloor 			# Printing out what floor you're going to
+	syscall
+	li $v0, 1
+ 	move $a0, $t0				# Print next floor number				
+ 	syscall 					
+    Loop2:
+	beq $t1, $t0, reached			# Branch to reached if current floor equals desired floor
+	addi $t1, $t1, -1 			# Decrement the current floor
+	li $v0, 4				# Load system call code for print_string
+	la $a0, currentFloor 			# Printing out what floor you're on
+	syscall
+	li $v0, 1
+ 	move $a0, $t1				# Print current floor number
+ 	syscall
+ 	li $v0, 4 				# Load system call code for print_string
+	la $a0, newline     			# Load address of the string
+	syscall
+	j Loop2
+	
 reached:
-	#dale's dequeue function.
-	
+	li $v0, 4				# Load system call code for print_string
+	la $a0, currentFloor			# Print current floor number
+	syscall		
+	li $v0, 1	
+ 	move $a0, $t1				# Print current floor number				
+ 	syscall
+	li $v0, 4 				# Load system call code for print_string
+	la $a0, newline     			# Load address of the string
+	syscall		
+	j $ra 	
 
 
-
-	
-#Exit:
-#	 li $v0, 1
-#	 move $a0, $t2
-#	 syscall
-#	 li $v0, 10
-#	 syscall
