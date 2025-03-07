@@ -3,6 +3,7 @@ directionPrompt .asciiz "Press 'u' for UP and 'd' for DOWN?"
 currentFloor .asciiz "Enter the current floor you're on. "
 movingUp .asciiz "Going up : "
 movingDown .asciiz "Going down : "
+
 reachedFloor .asciiz "Arrived floor "
 newline .asciiz "\n"
 
