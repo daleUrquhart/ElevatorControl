@@ -1,11 +1,11 @@
 <mxfile host="65bd71144e">
     <diagram id="L__qeDaYQ-qvYdszmure" name="Page-1">
-        <mxGraphModel dx="444" dy="547" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+        <mxGraphModel dx="975" dy="704" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
-                <mxCell id="2" value="queue.asm&lt;div&gt;&lt;hr&gt;enq()&lt;/div&gt;&lt;div&gt;deq()&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;align=left;" vertex="1" parent="1">
-                    <mxGeometry x="60" y="30" width="120" height="140" as="geometry"/>
+                <mxCell id="2" value="queue.asm&lt;div&gt;&lt;hr&gt;enq($a0 value)&lt;/div&gt;&lt;div&gt;deq(): Node&lt;/div&gt;&lt;div&gt;is_empty()&lt;/div&gt;&lt;div&gt;is_full()&lt;/div&gt;&lt;div&gt;peek()&lt;/div&gt;&lt;div&gt;init()&lt;/div&gt;&lt;div&gt;print()&lt;/div&gt;" style="whiteSpace=wrap;html=1;align=left;" vertex="1" parent="1">
+                    <mxGeometry x="365" y="130" width="120" height="140" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>
