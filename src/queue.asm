@@ -3,140 +3,110 @@
 queue:          .space 24         # Space for n floor requests (4 bytes each) 1 greater than actual
 head:           .word 0           # Head index of the queue
 tail:           .word 0           # Tail index of the queue
-size:           .word 6           # Maximum queue size -- make sure to update init with change aswell (queue space/4)
+size:           .word 6           # Maximum queue size -- make sure to update init with change aswell (queue space/4) aswell as look datas
 current_floor:  .word 0           # Elevator's current floor
 direction:      .word 0           # 1 for up, -1 for down, 0 for idle
 emergency_stop: .word 0
 full_msg:       .asciiz "Queue is full!\n"
 empty_msg:      .asciiz "Queue is empty.\n"
 enq_done_msg:   .asciiz "Request added to the queue.\n"
-deq_done_msg:   .asciiz "Request processed from the queue.\n"
-
+stopped_msg:    .asciiz "Elevator is in emergency stop mode, can not process requests."
     .text
-    .globl queue_init, enq, deq, q_print, is_full, is_empty, prioritize, direction, emergency_stop
+    .globl queue_init, enq, deq, q_print, is_full, is_empty, direction, emergency_stop, current_floor, head, tail, size, queue
 
 #============================================================== ENQUEUE ==============================================================
 # Enqueue Function 
 enq:
-    lw $t0, emergency_stop      # Check if emergency stop is active
-    bnez $t0, q_full            
+    lw $t0, emergency_stop      	# Check if emergency stop is active 
+    bnez $t0, stopped           
 
-    lw $t1, tail                # Load tail index
-    lw $t2, size                # Load queue size
-    lw $t3, head                # Load head index
-    addi $t4, $t1, 1            # Increment tail index
-    rem $t4, $t4, $t2           # Ensure circular queue behavior
+    lw $t1, tail           
+    lw $t2, size               
+    lw $t3, head      
+                
+    addi $t8, $t1, 1
+    rem $t8, $t8, $t2
+    beq $t8, $t3, q_full        	# If next tail position equals head, queue is full
+
+    mul $t4, $t1, 4             	# Store floor request on new head index
+    la $t5, queue               
+    add $t5, $t5, $t4            
+    sw $a0, 0($t5)             
     
-    beq $t4, $t3, q_full        # If next tail position equals head, queue is full
-
-    mul $t4, $t1, 4             # Compute byte offset
-    la $t5, queue               # Load queue base address
-    add $t5, $t5, $t4           # Compute target address
-    sw $a0, 0($t5)              # Store floor request
-    
-    addi $t1, $t1, 1            # Increment tail index
-    rem $t1, $t1, $t2           # Ensure circular queue wrap
-    sw $t1, tail                # Update tail index
-
-    # Update direction if idle
-    lw $t6, direction
-    bnez $t6, skip_direction    # Skip if already moving
-    lw $t7, current_floor
-    blt $t7, $a0, set_up        # If request is above, go up
-    bgt $t7, $a0, set_down      # If below, go down
-    j skip_direction            # Otherwise, stay idle
-
-set_up:
-    li $t6, 1                   # Set direction to up
-    sw $t6, direction
-    j skip_direction
-
-set_down:
-    li $t6, -1                  # Set direction to down
-    sw $t6, direction
-
-skip_direction:
-    # Call prioritize
+    lw $t1, tail 
+    lw $t2, size 				# Now safely update the tail index before sorting
+    addi $t1, $t1, 1
+    rem $t1, $t1, $t2
+    sw $t1, tail
+    						# Call look to sort the queue BEFORE updating tail
     addi $sp, $sp, -4
     sw $ra, 0($sp)
-    jal prioritize
+    #la $t9, look
+    #jalr $t9
     lw $ra, 0($sp)
     addi $sp, $sp, 4
-
-    # Print enqueue message
-    li $v0, 4
-    la $a0, enq_done_msg
-    syscall
-    jr $ra
+						# Handle direction after sorting
+    lw $t6, direction
+    bnez $t6, skip_direction
+    lw $t7, current_floor
+    blt $t7, $a0, set_up
+    bgt $t7, $a0, set_down
 
 #============================================================== BASIC FUNCTIONS ==============================================================
 # Dequeue Function (Process floor request)
 deq:
-    addi $sp, $sp, -4		# Save RA
+    addi $sp, $sp, -4        # Save RA and check if Q is empty 
     sw $ra, 0($sp)
-    jal is_empty
-    lw $ra, 0($sp)
-    addi $sp, $sp, 4
-    
-    bnez $v0, q_empty        	# If queue is empty, print message
+    jal is_empty  
+    bnez $v0, q_empty    
 
-    lw $t1, head             	# Load head index
-    lw $t2, size             	# Load queue size
-    
-    mul $t3, $t1, 4          # Compute byte offset
-    la $t4, queue            # Load queue base address
-    add $t4, $t4, $t3        # Compute target address
-    lw $a0, 0($t4)           # Load request
-    
+    lw $t1, head             
+    lw $t2, size             
+
+    mul $t3, $t1, 4          # Get the floor at top of the Q (head)
+    la $t4, queue            
+    add $t4, $t4, $t3       
+    lw $a0, 0($t4)            
+
     sw $a0, current_floor    # Update current floor
+ 
+    jal increment_head      # Increment head 
 
-    addi $t1, $t1, 1         # Increment head index
-    rem $t1, $t1, $t2        # Ensure circular queue behavior
-    sw $t1, head             # Update head index
+    jal is_empty 		# Handle the case when queue becomes empty after dequeue 
+    bnez $v0, reset_direction 
 
-    # Update direction if queue becomes empty
-    addi $sp, $sp, -4		# Save RA
-    sw $ra, 0($sp) 
-    jal is_empty
-    lw $ra, 0($sp)
+    lw $ra, 0($sp)		# Update direction if the Q is not empty
     addi $sp, $sp, 4
-    bnez $v0, reset_direction
-    j direction_check
-
+    j direction_check 
+    
 reset_direction:
     li $t0, 0
-    sw $t0, direction
-    j deq_done
+    sw $t0, direction        # Reset direction if queue is empty
+    jr $ra
+
 
 # Update direction based on next request
 direction_check:
-    lw $t1, head
+    lw $t1, head		# Get value at the head (next floor)
     mul $t3, $t1, 4
     la $t4, queue
     add $t4, $t4, $t3
-    lw $t5, 0($t4)           # Load next request
+    lw $t5, 0($t4)          
     lw $t6, current_floor
 
-    blt $t6, $t5, set_up
-    bgt $t6, $t5, set_down
-
-    
-# Print dequeue message
-deq_done:
-    li $v0, 4
-    la $a0, deq_done_msg
-    syscall
+    blt $t6, $t5, set_up	# Compare current floor and next floor and set direction 
+    bgt $t6, $t5, set_down 
     jr $ra
-
+    
 # Initialize queue
-queue_init:
-    li $t0, 0
-    sw $t0, head
-    sw $t0, tail
-    sw $t0, current_floor
-    sw $t0, direction
-    li $t1, 6
-    sw $t1, size
+queue_init: 
+    sw $zero, head
+    sw $zero, tail
+    sw $zero, current_floor
+    sw $zero, direction
+    sw $zero, emergency_stop
+    li $t0, 6
+    sw $t0, size
     jr $ra
     
 # Check if queue is full
@@ -182,6 +152,30 @@ print_loop:
 
     jr $ra
 
+
+# Set direction to up
+set_up:
+    li $t6, 1                   
+    sw $t6, direction
+    j skip_direction
+
+# Set direction to down
+set_down:
+    li $t6, -1                  
+    sw $t6, direction
+    j skip_direction
+
+# Returns to main
+skip_direction:
+    jr $ra
+     
+# Increments the head index for the circular Q
+increment_head:
+    addi $t1, $t1, 1       
+    rem $t1, $t1, $t2        
+    sw $t1, head    
+    jr $ra
+    
 # Empty queue message
 q_empty:
     li $v0, 4
@@ -195,60 +189,10 @@ q_full:
     la $a0, full_msg
     syscall
     jr $ra
-
-#============================================================== PRIORITIZATION ==============================================================
-# Prioritize the queue (Elevator Prioritization)
-prioritize:
-    # Load direction and check if sorting is needed
-    lw $t0, direction      # Elevator direction
-    lw $t1, head           # Load head index
-    lw $t2, tail           # Load tail index
-    lw $t3, size           # Load queue size
-    beq $t1, $t2, prioritize_end   # If queue is empty, return
-    beqz $t0, prioritize_end       # If idle, no need to sort
-
-    la $t4, queue          # Load base address of queue
-
-sort_loop:
-    li $t5, 0              # Swap flag (0 = no swaps, 1 = swaps made)
-
-    move $t6, $t1          # Start index (head)
-    move $t7, $t2          # End index (tail)
-    addi $t7, $t7, -1      # Adjust tail for comparisons
-
-bubble_pass:
-    mul $t8, $t6, 4        # Byte offset of queue[t6]
-    add $t8, $t4, $t8      # Address of queue[t6]
-    lw $t9, 0($t8)         # Load queue[t6] (current request)
-
-    # Get next index (circular behavior)
-    addi $t6, $t6, 1
-    rem $t6, $t6, $t3      # Wrap around
-    beq $t6, $t2, check_swaps  # Stop if we've reached tail
-
-    mul $t8, $t6, 4        # Byte offset of queue[next]
-    add $t8, $t4, $t8      # Address of queue[next]
-    lw $t1, 0($t8)         # Load queue[next] (next request)
-
-    # Sorting conditions based on direction
-    bgtz $t0, check_up     # If moving up, sort ascending
-    bltz $t0, check_down   # If moving down, sort descending
-
-check_up:
-    bgt $t9, $t1, swap     # Swap if out of order (smallest first)
-    j bubble_pass
-
-check_down:
-    blt $t9, $t1, swap     # Swap if out of order (largest first)
-    j bubble_pass
-
-swap:
-    sw $t1, -4($t8)        # Swap queue[t6-1] and queue[t6]
-    sw $t9, 0($t8)         # Store new value
-    li $t5, 1              # Set swap flag (indicates changes)
-
-check_swaps:
-    bnez $t5, sort_loop    # If swaps were made, do another pass
-
-prioritize_end:
+    
+# Handle emergency stop status true
+stopped:
+    li $v0, 4
+    la $a0, stopped_msg
+    syscall
     jr $ra
