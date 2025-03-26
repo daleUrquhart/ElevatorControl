@@ -6,7 +6,7 @@ stopped: .asciiz "The elevator has been stopped. Do you want to restart the elev
 .text
 
 
-beq $a0, 65, alarm 			# If input equal to 'A', sound alarm
+beq $a0, 65, alarm 				# If input equal to 'A', sound alarm
 
 alarm:
 	jal sound_alarm
@@ -45,7 +45,7 @@ sound_alarm:
 beq $a0, 83, stop				# If input equal to 'S', call stop function 	
 
 stop:
-	jal queue_init					# Call remove queue
+	jal reset_q				# Call remove queue
 	li $v0, 4 				# Load system call code for print_string
 	la $a0, stopped 			# Load address of the stopped message
 	syscall 				# Execute the system call	
@@ -54,8 +54,7 @@ stop:
 	j exit					# Go to exit function
 	
 	restart:
-		jal queue_init			# Re-initialize the queue
-		j main_loop			# Restart input loop
+		j main			# Restart input loop
 	
 exit:
 						# Exit the program
