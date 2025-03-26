@@ -1,215 +1,98 @@
-.data
-.align 2 
-queue_up: .space 24
-queue_down: .space 24
-
-debug_msg: .asciiz "Debug: "
-newline: .asciiz "\n"
-
-.globl look
-.text
-look: 
-    # Debug: Entering look
-    li $v0, 4
-    la $a0, debug_msg
-    syscall
-    li $v0, 1
-    li $a0, 1
-    syscall
-    li $v0, 4
-    la $a0, newline
-    syscall
-
+# New function: optimize_queue
+# Creates a temporary queue and sorts requests based on the current direction
+.globl optimize_queue 
+optimize_queue:
     lw $t0, direction
-    lw $t1, head           
-    lw $t2, tail           
-    lw $t3, size           
-    lw $t4, current_floor  
-    beq $t1, $t2, look_end 
+    li $t1, 1       # Check if direction is UP
+    beq $t0, $t1, sort_descending
+    li $t1, -1      # Check if direction is DOWN
+    beq $t0, $t1, sort_ascending
 
-    la $t5, queue          
+    # Default to ascending if idle
+    j sort_ascending
 
-    li $t6, 0  # Up list count
-    li $t7, 0  # Down list count
-    la $s0, queue_up      
-    la $s1, queue_down    
+# Sort queue in ascending order (for going UP or IDLE)
+sort_ascending:
+    lw $t0, head
+    lw $t1, tail
+    lw $t2, size
+    la $t3, queue
 
-# Debug: Partitioning
-    li $v0, 4
-    la $a0, debug_msg
-    syscall
-    li $v0, 1
-    li $a0, 2
-    syscall
-    li $v0, 4
-    la $a0, newline
-    syscall
+    # Outer loop: iterate over each element
+asc_outer_loop:
+    beq $t0, $t1, end_sort
+    mul $t4, $t0, 4
+    add $t4, $t3, $t4
+    lw $t5, 0($t4)
 
-partition_loop:
-    beq $t1, $t2, partition_done   
-
-    mul $t8, $t1, 4
-    add $t8, $t5, $t8
-    lw $t9, 0($t8)
-
-    # Debug: Current request
-    li $v0, 4
-    la $a0, debug_msg
-    syscall
-    li $v0, 1
-    move $a0, $t9
-    syscall
-    li $v0, 4
-    la $a0, newline
-    syscall
-
-    blt $t9, $t4, add_down  
-
-    sw $t9, 0($s0)
-    addi $s0, $s0, 4
+    # Inner loop: compare and swap if needed
+    move $t6, $t0
+asc_inner_loop:
     addi $t6, $t6, 1
-    j partition_next
+    rem $t6, $t6, $t2
+    beq $t6, $t1, asc_outer_next
 
-add_down:
-    sw $t9, 0($s1)
-    addi $s1, $s1, 4
-    addi $t7, $t7, 1
+    mul $t7, $t6, 4
+    add $t7, $t3, $t7
+    lw $t8, 0($t7)
 
-partition_next: 
-    addi $t1, $t1, 1
-    div $t1, $t3
-    mfhi $t1
-    j partition_loop
+    bge $t5, $t8, asc_inner_next
 
-partition_done: 
-    bgtz $t6, sort_up
-    bgtz $t7, sort_down
-    j rebuild_queue
+    # Swap values
+    sw $t8, 0($t4)
+    sw $t5, 0($t7)
+    move $t5, $t8
 
-# Debug: Sorting Up
-sort_up:
-    li $v0, 4
-    la $a0, debug_msg
-    syscall
-    li $v0, 1
-    li $a0, 3
-    syscall
-    li $v0, 4
-    la $a0, newline
-    syscall
+asc_inner_next:
+    j asc_inner_loop
 
-    la $s0, queue_up
-    addi $t6, $t6, -1
-    li $t9, 0
+asc_outer_next:
+    addi $t0, $t0, 1
+    rem $t0, $t0, $t2
+    j asc_outer_loop
 
-up_sort_outer:
-    bge $t9, $t6, sort_down
-    li $t8, 0
+# Sort queue in descending order (for going DOWN)
+sort_descending:
+    lw $t0, head
+    lw $t1, tail
+    lw $t2, size
+    la $t3, queue
 
-up_sort_inner:
-    lw $t0, 0($s0)
-    lw $t1, 4($s0)
-    ble $t0, $t1, no_swap_up
+    # Outer loop
+desc_outer_loop:
+    beq $t0, $t1, end_sort
+    mul $t4, $t0, 4
+    add $t4, $t3, $t4
+    lw $t5, 0($t4)
 
-    sw $t1, 0($s0)
-    sw $t0, 4($s0)
+    # Inner loop
+    move $t6, $t0
 
-no_swap_up:
-    addi $s0, $s0, 4
-    addi $t8, $t8, 1
-    blt $t8, $t6, up_sort_inner
+desc_inner_loop:
+    addi $t6, $t6, 1
+    rem $t6, $t6, $t2
+    beq $t6, $t1, desc_outer_next
 
-    addi $t9, $t9, 1
-    la $s0, queue_up
-    j up_sort_outer
+    mul $t7, $t6, 4
+    add $t7, $t3, $t7
+    lw $t8, 0($t7)
 
-# Debug: Sorting Down
-sort_down:
-    li $v0, 4
-    la $a0, debug_msg
-    syscall
-    li $v0, 1
-    li $a0, 4
-    syscall
-    li $v0, 4
-    la $a0, newline
-    syscall
+    ble $t5, $t8, desc_inner_next
 
-    la $s1, queue_down
-    addi $t7, $t7, -1
-    li $t9, 0
+    # Swap values
+    sw $t8, 0($t4)
+    sw $t5, 0($t7)
+    move $t5, $t8
 
-down_sort_outer:
-    bge $t9, $t7, rebuild_queue
-    li $t8, 0
+desc_inner_next:
+    j desc_inner_loop
 
-down_sort_inner:
-    lw $t0, 0($s1)
-    lw $t1, 4($s1)
-    bge $t0, $t1, no_swap_down
+# Move to next outer iteration
+desc_outer_next:
+    addi $t0, $t0, 1
+    rem $t0, $t0, $t2
+    j desc_outer_loop
 
-    sw $t1, 0($s1)
-    sw $t0, 4($s1)
-
-no_swap_down:
-    addi $s1, $s1, 4
-    addi $t8, $t8, 1
-    blt $t8, $t7, down_sort_inner
-
-    addi $t9, $t9, 1
-    la $s1, queue_down
-    j down_sort_outer
-
-# Rebuilding the queue after sorting
-rebuild_queue:
-    # Debug: Rebuilding Queue
-    li $v0, 4
-    la $a0, debug_msg
-    syscall
-    li $v0, 1
-    li $a0, 6
-    syscall
-    li $v0, 4
-    la $a0, newline
-    syscall
-
-    # Rebuild the queue by copying the sorted elements back into the original queue
-    la $t5, queue
-    la $t6, queue_up
-    la $t7, queue_down
-
-    # Copy up queue
-    li $t8, 0
-rebuild_up:
-    bge $t8, 6, rebuild_down
-    lw $t9, 0($t6)
-    sw $t9, 0($t5)
-    addi $t5, $t5, 4
-    addi $t6, $t6, 4
-    addi $t8, $t8, 1
-    j rebuild_up
-
-rebuild_down:
-    li $t8, 0
-    # Copy down queue
-rebuild_down_loop:
-    bge $t8, 6, look_end
-    lw $t9, 0($t7)
-    sw $t9, 0($t5)
-    addi $t5, $t5, 4
-    addi $t7, $t7, 4
-    addi $t8, $t8, 1
-    j rebuild_down_loop
-
-look_end:
-    li $v0, 4
-    la $a0, debug_msg
-    syscall
-    li $v0, 1
-    li $a0, 5
-    syscall
-    li $v0, 4
-    la $a0, newline
-    syscall
-
+# Exit the sort function
+end_sort:
     jr $ra
