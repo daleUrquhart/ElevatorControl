@@ -1,3 +1,8 @@
+
+.include "emergency_measures.asm"
+.include "basic_logic.asm"
+.include "queue.asm"
+
 .data
     newline:          .asciiz "\n"
     menu_msg:         .asciiz "1. Request a floor\n2. Engage emergency stop\n3. Move to next floor\n4. Quit\nEnter your choice: "
@@ -187,3 +192,4 @@ print_done:
     syscall
     syscall
     jr $ra
+
