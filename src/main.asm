@@ -1,11 +1,7 @@
 
-.include "emergency_measures.asm"
-.include "basic_logic.asm"
-.include "queue.asm"
-
 .data
-    newline:          .asciiz "\n"
-    menu_msg:         .asciiz "1. Request a floor\n2. Engage emergency stop\n3. Move to next floor\n4. Sound the alamr\n5. Quit\nEnter your choice: "
+
+    menu_msg:         .asciiz "1. Request a floor\n2. Engage emergency stop\n3. Move to next floor\n4. Sound the alarm\n5. Quit\nEnter your choice: "
     prompt_floor:     .asciiz "Enter the floor to request (0-5): "
     quit_msg:         .asciiz "Exiting program...\n"
     emergency_msg:    .asciiz "Emergency stop engaged!\n"
@@ -19,7 +15,7 @@
     down_msg:      .asciiz "DOWN\n"
     idle_msg:      .asciiz "IDLE\n"
 .text
-    .globl main_loop
+    .globl main_loop, main
     
 main:
     # Initialize queue
@@ -71,8 +67,6 @@ request_floor:
 
 # Engage emergency stop (2)
 emergency_stop:
-  
-    
     jal stop 
         
   #  li $v0, 4

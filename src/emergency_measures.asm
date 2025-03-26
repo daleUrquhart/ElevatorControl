@@ -1,15 +1,10 @@
 .data
-alarm_message: .asciiz "ALARM!" 
+alarm_message: .asciiz "ALARM!\n" 
 emergency_prompt: .asciiz "Press 'A' to cancel alarm:"
 newline: .asciiz "\n" 			
-stopped: .asciiz "The elevator has been stopped. Do you want to restart the elevator? (Y/N)"
+stopped_msg1: .asciiz "The elevator has been stopped. Do you want to restart the elevator? (Y/N)"
 .text
-
-
-beq $a0, 65, alarm 				# If input equal to 'A', sound alarm
-
-alarm:
-	jal sound_alarm
+.globl newline, stop, sound_alarm
 	
 sound_alarm:
 	move $t1, $a0				# Move argument to temporary register
@@ -21,14 +16,11 @@ sound_alarm:
 	li $v0, 32				# Load system call code for wait
 	li $a0, 1000				# Set delay to 1000 milliseconds
 	syscall					# Execute the system call
-	li $v0, 4 				# Load system call code for print_string
-	la $a0, newline     			# Load address of the string
-	syscall					# Execute the system call
-	addi $t0, $t0, 1				# Increment count
+	addi $t0, $t0, 1			# Increment count
 	bne $t0, 5, sound_alarm 		# Loop
 	
 	li $v0, 4 				# Load system call code for print_string
-	la $a0, emergency_prompt 				# Load address of the prompt message
+	la $a0, emergency_prompt 		# Load address of the prompt message
 	syscall 				# Execute the system call
  	
 	li $v0, 8 				# Load system call code for read_string
@@ -42,12 +34,12 @@ sound_alarm:
 
 #_____________________________________________________________________________________________
 
-beq $a0, 83, stop				# If input equal to 'S', call stop function 	
+#beq $a0, 83, stop				# If input equal to 'S', call stop function 	
 
 stop:
 	jal reset_q				# Call remove queue
 	li $v0, 4 				# Load system call code for print_string
-	la $a0, stopped 			# Load address of the stopped message
+	la $a0, stopped_msg1			# Load address of the stopped message
 	syscall 				# Execute the system call	
 	
 	beq $a0, 89, restart			# If input equal to 'Y', restart the program

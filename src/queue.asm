@@ -6,19 +6,19 @@ tail:           .word 0           # Tail index of the queue
 size:           .word 6           # Maximum queue size -- make sure to update init with change aswell (queue space/4) aswell as look datas
 current_floor:  .word 0           # Elevator's current floor
 direction:      .word 0           # 1 for up, -1 for down, 0 for idle
-emergency_stop: .word 0
+emergency_stop_val: .word 0
 full_msg:       .asciiz "Queue is full!\n"
 empty_msg:      .asciiz "Queue is empty.\n"
 enq_done_msg:   .asciiz "Request added to the queue.\n"
 stopped_msg:    .asciiz "Elevator is in emergency stop mode, can not process requests."
     .text
-    .globl queue_init, enq, deq, q_print, is_full, is_empty, direction, emergency_stop, current_floor, head, tail, size, queue
+    .globl queue_init, enq, deq, q_print, is_full, is_empty, direction, current_floor, head, tail, size, queue, stopped_msg, reset_q
 
 #============================================================== ENQUEUE ==============================================================
 # Enqueue Function 
 # Enqueue Function 
 enq:
-    lw $t0, emergency_stop      	# Check if emergency stop is active 
+    lw $t0, emergency_stop_val      	# Check if emergency stop is active 
     bnez $t0, stopped           
 
     lw $t1, tail           
@@ -106,7 +106,7 @@ queue_init:
     sw $zero, tail
     sw $zero, current_floor
     sw $zero, direction
-    sw $zero, emergency_stop
+    sw $zero, emergency_stop_val
     li $t0, 6
     sw $t0, size
     jr $ra
