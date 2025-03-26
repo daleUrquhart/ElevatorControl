@@ -42,7 +42,7 @@ enq:
 
     addi $sp, $sp, -4        # Save RA and check if Q is empty 
     sw $ra, 0($sp)
-    jal look			# Call look to sort the queue BEFORE updating tail 
+    jal optimize_queue			# Call look to sort the queue BEFORE updating tail 
     lw $ra, 0($sp)		
     addi $sp, $sp, 4
 						# Handle direction after sorting
@@ -110,7 +110,17 @@ queue_init:
     li $t0, 6
     sw $t0, size
     jr $ra
-    
+ 
+# Initialize queue
+reset_q: 
+    sw $zero, head
+    sw $zero, tail
+    sw $zero, current_floor
+    sw $zero, direction 
+    li $t0, 6
+    sw $t0, size
+    jr $ra
+       
 # Check if queue is full
 is_full:
     lw $t0, tail
