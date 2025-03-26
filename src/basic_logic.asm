@@ -3,9 +3,10 @@ floorRequest: .asciiz "Enter the desired floor you want to reach to: "
 movingUp: .asciiz "You are moving up to : "
 movingDown: .asciiz "You are moving down to : "
 floorReached: .asciiz "You have reached your desired floor "
+targetFloor: .word 0
+currentFloor: .word 0
+.text 
 
-.text
-.globl main
 main:
 li $v0, 4
 la $a0, targetFloor

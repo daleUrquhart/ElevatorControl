@@ -10,58 +10,43 @@
     idle_msg:      .asciiz "IDLE\n"
 
 .text
-    #.globl main
 
 main:
     # Initialize queue
     jal queue_init
 
     # Enqueue a few floors
+    li $a0, 1
+    jal enq 
+
+    li $a0, 2
+    jal enq 
+
     li $a0, 3
     jal enq
-    #jal print_queue_status
-
-    li $a0, 5
-    jal enq
-    #jal print_queue_status
-
-    li $a0, 1
-    jal enq
-    jal print_queue_status 			# Should be 1,3,5
+    jal print_queue_status 			
 
     # Dequeue a floor
     jal deq
-    jal print_queue_status			# 3,5
+    jal print_queue_status			
 
     # Enqueue more floors
     li $a0, 4
-    jal enq
-    #jal print_queue_status
-						# 3,4,5 -- not printed
-    li $a0, 2
-    jal enq
+    jal enq 
+		
     jal print_queue_status
-						# 3,4,5,2
+					
     # Dequeue again
-    jal deq
-    #jal print_queue_status
-
+    jal deq 
+    jal print_queue_status # Should be 3,4
+    
     li $a0, 1
     jal enq
-    #jal print_queue_status
-    
-    li $a0, 6
-    jal enq
-    jal print_queue_status
-    						# 4,5,6,2,1
     jal deq
     jal deq
+    jal print_queue_status # Giong down
     jal deq
-    #jal print_queue_status
-    jal deq
-    jal deq
-    jal print_queue_status			# MT
-    
+    jal print_queue_status  # Empty Q floor 1 going nowhere
     # Finish
     li $v0, 10
     syscall
@@ -138,5 +123,6 @@ print_queue_loop:
 print_done:
     li $v0, 4
     la $a0, newline
+    syscall
     syscall
     jr $ra

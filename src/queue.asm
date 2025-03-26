@@ -16,6 +16,7 @@ stopped_msg:    .asciiz "Elevator is in emergency stop mode, can not process req
 
 #============================================================== ENQUEUE ==============================================================
 # Enqueue Function 
+# Enqueue Function 
 enq:
     lw $t0, emergency_stop      	# Check if emergency stop is active 
     bnez $t0, stopped           
@@ -38,15 +39,14 @@ enq:
     addi $t1, $t1, 1
     rem $t1, $t1, $t2
     sw $t1, tail
-    						# Call look to sort the queue BEFORE updating tail
-    addi $sp, $sp, -4
+
+    addi $sp, $sp, -4        # Save RA and check if Q is empty 
     sw $ra, 0($sp)
-    #la $t9, look
-    #jalr $t9
-    lw $ra, 0($sp)
+    jal look			# Call look to sort the queue BEFORE updating tail 
+    lw $ra, 0($sp)		
     addi $sp, $sp, 4
 						# Handle direction after sorting
-    lw $t6, direction
+    lw $t6, direction	
     bnez $t6, skip_direction
     lw $t7, current_floor
     blt $t7, $a0, set_up
@@ -72,14 +72,16 @@ deq:
  
     jal increment_head      # Increment head 
 
-    jal is_empty 		# Handle the case when queue becomes empty after dequeue 
-    bnez $v0, reset_direction 
-
-    lw $ra, 0($sp)		# Update direction if the Q is not empty
-    addi $sp, $sp, 4
-    j direction_check 
     
-reset_direction:
+    jal is_empty 		# Handle the case when queue becomes empty after dequeue 
+    lw $ra, 0($sp)		
+    addi $sp, $sp, 4
+    bnez $v0, reset_direction 
+    
+    
+    j direction_check 		# Update direction if the Q is not empty
+    
+reset_direction: 
     li $t0, 0
     sw $t0, direction        # Reset direction if queue is empty
     jr $ra
@@ -128,9 +130,14 @@ is_empty:
 
 # Print the queue
 q_print:
-    lw $t0, head
-    lw $t1, tail
-    beq $t0, $t1, q_empty
+    addi $sp, $sp, -4        # Save RA and check if Q is empty 
+    sw $ra, 0($sp)
+    jal is_empty  
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4        # Save RA and check if Q is empty 
+
+    
+    bnez $v0, q_empty  
 
 print_loop:
     mul $t4, $t0, 4
@@ -157,13 +164,13 @@ print_loop:
 set_up:
     li $t6, 1                   
     sw $t6, direction
-    j skip_direction
+    jr $ra
 
 # Set direction to down
 set_down:
     li $t6, -1                  
     sw $t6, direction
-    j skip_direction
+    jr $ra
 
 # Returns to main
 skip_direction:

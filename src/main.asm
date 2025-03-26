@@ -1,160 +1,189 @@
-    .data
-queue:          .space 20         # Space for 5 floor requests (4 bytes each)
-head:           .word 0           # Head index of the queue
-tail:           .word 0           # Tail index of the queue
-size:           .word 5           # Maximum size of the queue (5 items)
-full_msg:       .asciiz "Queue is full!\n"
-empty_msg:      .asciiz "Queue is empty.\n"
-enq_done_msg:   .asciiz "Request added to the queue.\n"
-deq_done_msg:   .asciiz "Request processed from the queue.\n"
-prompt:         .asciiz "Enter floor request (1-5): "
+.data
+    newline:          .asciiz "\n"
+    menu_msg:         .asciiz "1. Request a floor\n2. Engage emergency stop\n3. Move to next floor\n4. Quit\nEnter your choice: "
+    prompt_floor:     .asciiz "Enter the floor to request (0-5): "
+    quit_msg:         .asciiz "Exiting program...\n"
+    emergency_msg:    .asciiz "Emergency stop engaged!\n"
 
-    .text
-    #.globl main
-
+    enq_msg:       .asciiz "Enqueueing floor: "
+    deq_msg:       .asciiz "Dequeuing floor...\n"
+    queue_state:   .asciiz "Queue state: "
+    curr_floor_msg:.asciiz "Current floor: "
+    direction_msg: .asciiz "Direction: "
+    up_msg:        .asciiz "UP\n"
+    down_msg:      .asciiz "DOWN\n"
+    idle_msg:      .asciiz "IDLE\n"
+.text
+    .globl main_loop
 main:
-    # Initialize system
-    jal init_system
+    # Initialize queue
+    jal queue_init
 
 main_loop:
-    # Request input from user (floor request)
+    # Display the menu
     li $v0, 4                # Print string syscall
-    la $a0, prompt           # Load address of the prompt string
+    la $a0, menu_msg
     syscall
 
+    # Get user input for menu choice
     li $v0, 5                # Read integer syscall
     syscall
-    move $a0, $v0            # Store user input in $a0 (floor request)
+    move $t0, $v0            # Store the choice in $t0
 
-    # Process floor request (enqueue)
-    jal enq
-
-    # Print the current queue contents
-    jal q_print
-
-    # Process and dequeue request
-    jal deq
-
-    # Print the current queue contents after dequeue
-    jal q_print
-
-    # Return to main loop
+    # Check the user choice
+    beq $t0, 1, request_floor
+    beq $t0, 2, emergency_stop
+    beq $t0, 3, move_next_floor
+    beq $t0, 4, quit_program
+    jal print_queue_status
+    # Invalid choice, loop again
     j main_loop
 
-# Initialize system
-init_system:
-    li $t0, 0                # Initialize head to 0
-    sw $t0, head
-    sw $t0, tail             # Initialize tail to 0
-    li $t1, 5                # Set queue size to 5
-    sw $t1, size
-    jr $ra
-
-# Enqueue Function (Add floor request to the queue)
-enq:
-    # Check if the queue is full
-    jal is_full
-    bnez $v0, q_full         # If queue is full, stop enqueue
-
-    # Get current tail index
-    lw $t1, tail
-    lw $t2, size
-    mul $t3, $t1, 4          # Calculate byte offset (4 bytes per floor)
-    la $t4, queue            # Load base address of queue
-    add $t4, $t4, $t3        # Add offset to base address
-    sw $a0, 0($t4)           # Store floor request at tail position
-
-    # Update tail index (circular)
-    addi $t1, $t1, 1
-    rem $t1, $t1, $t2        # Ensure tail wraps around (circular queue)
-    sw $t1, tail
-
-    # Print confirmation message
+# Request a floor (1)
+request_floor:
+    # Ask user for floor number
     li $v0, 4
-    la $a0, enq_done_msg
+    la $a0, prompt_floor
     syscall
 
-    jr $ra
+    # Read the floor number
+    li $v0, 5
+    syscall
+    move $a0, $v0  # Move the input floor to $a0 for enqueueing
 
-# Dequeue Function (Process floor request from the queue)
-deq:
-    # Check if the queue is empty
-    jal is_empty
-    bnez $v0, q_empty        # If empty, stop dequeue
-
-    # Get current head index
-    lw $t1, head
-    lw $t2, size
-    mul $t3, $t1, 4          # Calculate byte offset (4 bytes per floor)
-    la $t4, queue            # Load base address of queue
-    add $t4, $t4, $t3        # Add offset to base address
-    lw $a0, 0($t4)           # Load floor request from head position
-
-    # Print the processed request message
+    # Enqueue the floor request
+    jal enq
+    
+    # Print a newline for formatting
     li $v0, 4
-    la $a0, deq_done_msg
+    la $a0, newline
     syscall
 
-    # Update head index (circular)
-    addi $t1, $t1, 1
-    rem $t1, $t1, $t2        # Ensure head wraps around (circular queue)
-    sw $t1, head
+    # Return to menu
+    j main_loop
 
-    jr $ra
+# Engage emergency stop (2)
+emergency_stop:
+    li $v0, 4
+    la $a0, emergency_msg
+    syscall
+    
+    # Set emergency stop flag
+    li $t0, 1
+    sw $t0, emergency_stop
 
-# Check if the queue is full
-is_full:
-    lw $t0, tail
-    lw $t1, size
-    lw $t2, head
-    addi $t3, $t0, 1
-    rem $t3, $t3, $t1
-    seq $v0, $t3, $t2
-    jr $ra
+    # Return to menu
+    j main_loop
 
-# Check if the queue is empty
-is_empty:
+# Move to the next floor (3)
+move_next_floor:
+    # Dequeue the next floor request
+    jal deq
+
+    # Print a newline for formatting
+    li $v0, 4
+    la $a0, newline
+    syscall
+
+    # Return to menu
+    j main_loop
+
+# Quit program (4)
+quit_program:
+    li $v0, 4
+    la $a0, quit_msg
+    syscall
+    
+    # Exit the program
+    li $v0, 10
+    syscall
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ===========================================
+# Print the current queue status
+# ===========================================
+print_queue_status:
+    # Print current floor
+    li $v0, 4
+    la $a0, curr_floor_msg
+    syscall
+
+    lw $a0, current_floor
+    li $v0, 1
+    syscall
+
+    li $v0, 4
+    la $a0, newline
+    syscall
+
+    # Print direction
+    li $v0, 4
+    la $a0, direction_msg
+    syscall
+
+    lw $t0, direction
+    beqz $t0, print_idle
+    bltz $t0, print_down
+
+    # Print UP
+    la $a0, up_msg
+    j print_dir_done
+
+print_down:
+    la $a0, down_msg
+    j print_dir_done
+
+print_idle:
+    la $a0, idle_msg
+
+print_dir_done:
+    li $v0, 4
+    syscall
+
+    # Print queue contents
+    li $v0, 4
+    la $a0, queue_state
+    syscall
+
     lw $t0, head
     lw $t1, tail
-    seq $v0, $t0, $t1
-    jr $ra
+    lw $t2, size
+    la $t3, queue
 
-# Print the current contents of the queue
-q_print:
-    lw $t0, head
-    lw $t1, tail
-    beq $t0, $t1, q_empty     # If empty, print message
+print_queue_loop:
+    beq $t0, $t1, print_done
 
-print_loop:
-    mul $t4, $t0, 4           # Get byte offset for the queue
-    la $t5, queue
-    add $t5, $t5, $t4         # Add the offset to get the correct address
-    lw $a0, 0($t5)            # Load floor number from queue
+    mul $t4, $t0, 4
+    add $t4, $t3, $t4
+    lw $a0, 0($t4)
 
-    li $v0, 1                 # Print integer syscall
+    li $v0, 1
     syscall
 
-    li $a0, ' '               # Print space between numbers
+    li $a0, ' '
     li $v0, 11
     syscall
 
     addi $t0, $t0, 1
-    lw $t2, size
-    rem $t0, $t0, $t2         # Wrap around the queue in circular fashion
-    bne $t0, $t1, print_loop  # Continue printing if head != tail
+    rem $t0, $t0, $t2
+    j print_queue_loop
 
-    jr $ra
-
-# Empty queue message
-q_empty:
+print_done:
     li $v0, 4
-    la $a0, empty_msg
+    la $a0, newline
     syscall
-    jr $ra
-
-# Full queue message
-q_full:
-    li $v0, 4
-    la $a0, full_msg
     syscall
     jr $ra

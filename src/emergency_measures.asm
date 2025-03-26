@@ -1,9 +1,8 @@
 .data
 alarm_message: .asciiz "ALARM!" 
-prompt: .asciiz "Press 'A' to cancel alarm:"
+emergency_prompt: .asciiz "Press 'A' to cancel alarm:"
 newline: .asciiz "\n" 			
 stopped: .asciiz "The elevator has been stopped. Do you want to restart the elevator? (Y/N)"
-.include "main.asm"
 .text
 
 
@@ -25,11 +24,11 @@ sound_alarm:
 	li $v0, 4 				# Load system call code for print_string
 	la $a0, newline     			# Load address of the string
 	syscall					# Execute the system call
-	addi $t0, 1				# Increment count
+	addi $t0, $t0, 1				# Increment count
 	bne $t0, 5, sound_alarm 		# Loop
 	
 	li $v0, 4 				# Load system call code for print_string
-	la $a0, prompt 				# Load address of the prompt message
+	la $a0, emergency_prompt 				# Load address of the prompt message
 	syscall 				# Execute the system call
  	
 	li $v0, 8 				# Load system call code for read_string
@@ -39,14 +38,14 @@ sound_alarm:
 	bne $a0, 65, sound_alarm		# While input is not equal to 'A', continue
 						# Printing "ALARM!"
 	move $t1, $a0				# Restore the original input back to argument register
-	j $ra					# Return when input is equal to 'A'
+	jr $ra					# Return when input is equal to 'A'
 
 #_____________________________________________________________________________________________
 
 beq $a0, 83, stop				# If input equal to 'S', call stop function 	
 
 stop:
-	jal rmq					# Call remove queue
+	jal queue_init					# Call remove queue
 	li $v0, 4 				# Load system call code for print_string
 	la $a0, stopped 			# Load address of the stopped message
 	syscall 				# Execute the system call	
@@ -55,8 +54,8 @@ stop:
 	j exit					# Go to exit function
 	
 	restart:
-		jal q_init			# Re-initialize the queue
-		j input_loop			# Restart input loop
+		jal queue_init			# Re-initialize the queue
+		j main_loop			# Restart input loop
 	
 exit:
 						# Exit the program
