@@ -13,14 +13,14 @@ optimize_queue:
 
 # Sort queue in ascending order (for going UP or IDLE)
 sort_ascending:
-    lw $t0, head
+    lw $t0, head	# Load Q values
     lw $t1, tail
     lw $t2, size
     la $t3, queue
 
     # Outer loop: iterate over each element
 asc_outer_loop:
-    beq $t0, $t1, end_sort
+    beq $t0, $t1, end_sort	
     mul $t4, $t0, 4
     add $t4, $t3, $t4
     lw $t5, 0($t4)
@@ -36,9 +36,6 @@ asc_inner_loop:
     mul $t7, $t6, 4
     add $t7, $t3, $t7
     lw $t8, 0($t7)
-
-    # If the new value is the same as the last inserted, skip
-    beq $t8, $t9, asc_inner_next
 
     bge $t5, $t8, asc_inner_next
 
@@ -56,6 +53,10 @@ asc_outer_next:
     addi $t0, $t0, 1
     rem $t0, $t0, $t2
     j asc_outer_loop
+
+
+
+
 
 # Sort queue in descending order (for going DOWN)
 sort_descending:

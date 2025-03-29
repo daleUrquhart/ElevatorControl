@@ -14,7 +14,7 @@
     up_msg:        .asciiz "UP\n"
     down_msg:      .asciiz "DOWN\n"
     idle_msg:      .asciiz "IDLE\n"
-    empty_msg:      .asciiz " Queue is empty\n"
+    empty_msg:      .asciiz " Queue is empty\n\n"
     curr_dir_msg:  .asciiz " || Current elevator direction: "
  
 .text
@@ -96,6 +96,13 @@ move_next_floor:
     lw $a0, current_floor
     syscall
     li $v0, 4
+    la $a0, curr_dir_msg
+    syscall
+    li $v0, 1 
+    lw $a0, direction
+    syscall
+
+    li $v0, 4
     la $a0, newline
     syscall
     syscall
@@ -161,6 +168,10 @@ print_queue_status:
 print_down:
     la $a0, down_msg
     j print_dir_done
+    
+print_up:
+    # Print UP
+    la $a0, up_msg
 
 print_idle:
     la $a0, idle_msg
@@ -199,6 +210,7 @@ print_queue_loop:
     j print_queue_loop
 
 print_done:
+    beqz $t9, empty_queue_print
     li $v0, 4
     la $a0, newline
     syscall
@@ -209,4 +221,4 @@ empty_queue_print:
     li $v0, 4		# Finish print function
     la $a0, empty_msg
     syscall
-    jr $ra
+    j main_loop

@@ -1,8 +1,8 @@
 .data
 alarm_message: .asciiz "ALARM!\n" 
-emergency_prompt: .asciiz "Press 'A' to cancel alarm:"
+emergency_prompt: .asciiz "Press 'A' to cancel alarm: "
 newline: .asciiz "\n" 			
-stopped_msg1: .asciiz "The elevator has been stopped. Do you want to restart the elevator? (Y/N)"
+stopped_msg1: .asciiz "The elevator has been stopped. Do you want to restart the elevator? (Y/N): "
 .text
 .globl newline, stop, sound_alarm
 
@@ -37,8 +37,8 @@ alarm:
 	li $v0, 4 				# Load system call code for print_string
 	la $a0, newline				# Load address of the newline
 	syscall 				# Execute the system call
-	
-						# Printing "ALARM!"
+	syscall
+												# Printing "ALARM!"
 	#move $t1, $a0				# Restore the original input back to argument register
 	jr $ra					# Return when input is equal to 'A'
 
