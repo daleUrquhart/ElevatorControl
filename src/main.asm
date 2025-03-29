@@ -1,7 +1,7 @@
 
 .data
 
-    menu_msg:         .asciiz "1. Request a floor\n2. Engage emergency stop\n3. Move to next floor\n4. Sound the alarm\n5. Print queue\n6. Quit\nEnter your choice: "
+    menu_msg:         .asciiz "Main Menu:\n1. Request a floor\n2. Engage emergency stop\n3. Move to next floor\n4. Sound the alarm\n5. Print queue\n6. Quit\nEnter your choice: "
     prompt_floor:     .asciiz "Enter the floor to request (0-5): "
     quit_msg:         .asciiz "Exiting program...\n"
     emergency_msg:    .asciiz "Emergency stop engaged!\n"
@@ -14,6 +14,9 @@
     up_msg:        .asciiz "UP\n"
     down_msg:      .asciiz "DOWN\n"
     idle_msg:      .asciiz "IDLE\n"
+    empty_msg:      .asciiz " Queue is empty\n"
+    curr_dir_msg:  .asciiz " || Current elevator direction: "
+ 
 .text
     .globl main_loop, main
     
@@ -44,6 +47,9 @@ main_loop:
 
 # Request a floor (1)
 request_floor:
+    li $v0, 4
+    la $a0, newline
+    syscall
     # Ask user for floor number
     li $v0, 4
     la $a0, prompt_floor
@@ -67,19 +73,22 @@ request_floor:
 
 # Engage emergency stop (2)
 emergency_stop:
+    li $v0, 4
+    la $a0, newline
+    syscall
     jal stop 
     # Return to menu
     j main_loop
 
 # Move to the next floor (3)
 move_next_floor:
-    # Dequeue the next floor request
-    jal deq
-
-    # Print a newline for formatting
     li $v0, 4
     la $a0, newline
     syscall
+    # Dequeue the next floor request
+    jal deq
+
+    # Print the current floor, with formatting
     li $v0, 4
     la $a0, curr_floor_msg
     syscall
@@ -89,8 +98,6 @@ move_next_floor:
     li $v0, 4
     la $a0, newline
     syscall
-    li $v0, 4
-    la $a0, newline
     syscall
 
     # Return to menu
@@ -98,10 +105,13 @@ move_next_floor:
 
 # Engage the alarm (4)
 sound_the_alarm:
+    li $v0, 4
+    la $a0, newline
+    syscall
     jal sound_alarm
     j main_loop
 
-# Quit program (5)
+# Quit program (6)
 quit_program:
     li $v0, 4
     la $a0, quit_msg
@@ -112,16 +122,23 @@ quit_program:
     syscall
 
 # ===========================================
-# Print the current queue status
+# Print the current queue status (5)
 # ===========================================
 print_queue_status:
+    # set print count to 0 
+    li $t9, 0
+    
+    li $v0, 4 				# Load system call code for print_string
+    la $a0, newline			# Load address of the newline
+    syscall 				# Execute the system call
+		 
     # Print current floor
     li $v0, 4
     la $a0, curr_floor_msg
     syscall
 
-    lw $a0, current_floor
     li $v0, 1
+    lw $a0, current_floor
     syscall
 
     li $v0, 4
@@ -164,7 +181,8 @@ print_dir_done:
 
 print_queue_loop:
     beq $t0, $t1, print_done
-
+    
+    addi $t9, $t9, 1	# increment print count
     mul $t4, $t0, 4
     add $t4, $t3, $t4
     lw $a0, 0($t4)
@@ -181,9 +199,14 @@ print_queue_loop:
     j print_queue_loop
 
 print_done:
-    li $v0, 4		# Finish print function
+    li $v0, 4
     la $a0, newline
     syscall
     syscall
-    jr $ra
+    j main_loop
 
+empty_queue_print:
+    li $v0, 4		# Finish print function
+    la $a0, empty_msg
+    syscall
+    jr $ra
