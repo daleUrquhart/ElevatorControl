@@ -12,7 +12,7 @@ empty_msg:      .asciiz "Queue is empty.\n"
 enq_done_msg:   .asciiz "Request added to the queue.\n"
 stopped_msg:    .asciiz "Elevator is in emergency stop mode, can not process requests."
     .text
-    .globl queue_init, enq, deq, q_print, is_full, is_empty, direction, current_floor, head, tail, size, queue, stopped_msg, reset_q
+    .globl queue_init, enq, deq, q_print, is_full, is_empty, direction, current_floor, head, tail, size, queue, stopped_msg, reset_q, empty_msg
 
 #============================================================== ENQUEUE ==============================================================
 # Enqueue Function 
