@@ -4,7 +4,7 @@
     prompt_floor:     .asciiz "Enter the floor to request (0-5): "
     quit_msg:         .asciiz "Exiting program...\n"
     emergency_msg:    .asciiz "Emergency stop engaged!\n"
-
+    curr_dir_msg:  .asciiz " || Current elevator direction: "
     enq_msg:       .asciiz "Enqueueing floor: "
     deq_msg:       .asciiz "Dequeuing floor...\n"
     queue_state:   .asciiz "Queue state: "
@@ -87,7 +87,10 @@ move_next_floor:
     lw $a0, current_floor
     syscall
     li $v0, 4
-    la $a0, newline
+    la $a0, curr_dir_msg
+    syscall
+    li $v0, 1 
+    lw $a0, direction
     syscall
     li $v0, 4
     la $a0, newline
@@ -186,7 +189,6 @@ print_done:
     beqz $t9, empty_q_printed
     li $v0, 4
     la $a0, newline
-    syscall
     syscall
     jr $ra
 
