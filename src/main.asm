@@ -1,7 +1,7 @@
 
 .data
 
-    menu_msg:         .asciiz "1. Request a floor\n2. Engage emergency stop\n3. Move to next floor\n4. Sound the alarm\n5. Quit\nEnter your choice: "
+    menu_msg:         .asciiz "1. Request a floor\n2. Engage emergency stop\n3. Move to next floor\n4. Sound the alarm\n5. Print queue\n6. Quit\nEnter your choice: "
     prompt_floor:     .asciiz "Enter the floor to request (0-5): "
     quit_msg:         .asciiz "Exiting program...\n"
     emergency_msg:    .asciiz "Emergency stop engaged!\n"
@@ -37,7 +37,8 @@ main_loop:
     beq $t0, 2, emergency_stop
     beq $t0, 3, move_next_floor
     beq $t0, 4, sound_the_alarm
-    beq $t0, 5, quit_program
+    beq $t0, 5, print_queue_status
+    beq $t0, 6, quit_program
     #jal print_queue_status
     # Invalid choice, loop again
     j main_loop
@@ -68,21 +69,7 @@ request_floor:
 # Engage emergency stop (2)
 emergency_stop:
     jal stop 
-        
-  #  li $v0, 4
-  #  la $a0, emergency_msg
-  #  syscall
-    
-    # Set emergency stop flag
-  #  li $t0, 1
-  #  sw $t0, emergency_stop
-
     # Return to menu
-    j main_loop
-
-# Engage the alarm
-sound_the_alarm:
-    jal sound_alarm
     j main_loop
 
 # Move to the next floor (3)
@@ -94,11 +81,28 @@ move_next_floor:
     li $v0, 4
     la $a0, newline
     syscall
+    li $v0, 4
+    la $a0, curr_floor_msg
+    syscall
+    li $v0, 1
+    lw $a0, current_floor
+    syscall
+    li $v0, 4
+    la $a0, newline
+    syscall
+    li $v0, 4
+    la $a0, newline
+    syscall
 
     # Return to menu
     j main_loop
 
-# Quit program (4)
+# Engage the alarm (4)
+sound_the_alarm:
+    jal sound_alarm
+    j main_loop
+
+# Quit program (5)
 quit_program:
     li $v0, 4
     la $a0, quit_msg

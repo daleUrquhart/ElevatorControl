@@ -72,7 +72,6 @@ deq:
  
     jal increment_head      # Increment head 
 
-    
     jal is_empty 		# Handle the case when queue becomes empty after dequeue 
     lw $ra, 0($sp)		
     addi $sp, $sp, 4
@@ -143,11 +142,12 @@ q_print:
     addi $sp, $sp, -4        # Save RA and check if Q is empty 
     sw $ra, 0($sp)
     jal is_empty  
-    lw $ra, 0($sp)
-    addi $sp, $sp, 4        # Save RA and check if Q is empty 
+           # Save RA and check if Q is empty 
 
     
     bnez $v0, q_empty  
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4 
 
 print_loop:
     mul $t4, $t0, 4
@@ -195,6 +195,8 @@ increment_head:
     
 # Empty queue message
 q_empty:
+    lw $ra, 0($sp)		
+    addi $sp, $sp, 4
     li $v0, 4
     la $a0, empty_msg
     syscall
