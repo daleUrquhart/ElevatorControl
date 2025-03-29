@@ -68,7 +68,7 @@ continue_enq:
 #============================================================== BASIC FUNCTIONS ==============================================================
 # Dequeue Function (Process floor request)
 deq:
-    addi $sp, $sp, -4        # Save RA and check if Q is empty 
+    addi $sp, $sp, -4       	  # Save RA and check if Q is empty 
     sw $ra, 0($sp)
     jal is_empty  
     bnez $v0, q_empty    
@@ -76,26 +76,26 @@ deq:
     lw $t1, head             
     lw $t2, size             
 
-    mul $t3, $t1, 4          # Get the floor at top of the Q (head)
+    mul $t3, $t1, 4         	  # Get the floor at top of the Q (head)
     la $t4, queue            
     add $t4, $t4, $t3       
     lw $a0, 0($t4)            
 
-    sw $a0, current_floor    # Update current floor
+    sw $a0, current_floor    	  # Update current floor
  
-    jal increment_head      # Increment head 
+    jal increment_head    	  # Increment head 
 
-    jal is_empty 		# Handle the case when queue becomes empty after dequeue 
+    jal is_empty 		  # Handle the case when queue becomes empty after dequeue 
     lw $ra, 0($sp)		
     addi $sp, $sp, 4
     bnez $v0, reset_direction 
     
     
-    j direction_check 		# Update direction if the Q is not empty
+    j direction_check 	 	  # Update direction if the Q is not empty
     
 reset_direction: 
     li $t0, 0
-    sw $t0, direction        # Reset direction if queue is empty
+    sw $t0, direction      	  # Reset direction if queue is empty
     jr $ra
 
 
