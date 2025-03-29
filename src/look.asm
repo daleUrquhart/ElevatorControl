@@ -27,6 +27,7 @@ asc_outer_loop:
 
     # Inner loop: compare and swap if needed
     move $t6, $t0
+    
 asc_inner_loop:
     addi $t6, $t6, 1
     rem $t6, $t6, $t2
