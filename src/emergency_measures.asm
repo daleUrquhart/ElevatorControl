@@ -5,10 +5,15 @@ newline: .asciiz "\n"
 stopped_msg1: .asciiz "The elevator has been stopped. Do you want to restart the elevator? (Y/N)"
 .text
 .globl newline, stop, sound_alarm
-	
+
+		
+
 sound_alarm:
-	move $t1, $a0				# Move argument to temporary register
 	li $t0, 0				# Initialize count = 0
+	
+alarm:
+	move $t1, $a0				# Move argument to temporary register
+
 	li $v0, 4 				# Load system call code for print_string
 	la $a0, alarm_message			# Load address of the alarm message
 	syscall 				# Execute the system call
@@ -17,7 +22,7 @@ sound_alarm:
 	li $a0, 1000				# Set delay to 1000 milliseconds
 	syscall					# Execute the system call
 	addi $t0, $t0, 1			# Increment count
-	bne $t0, 5, sound_alarm 		# Loop
+	bne $t0, 5, alarm 			# Loop
 	
 	li $v0, 4 				# Load system call code for print_string
 	la $a0, emergency_prompt 		# Load address of the prompt message
@@ -46,7 +51,7 @@ stop:
 	j exit					# Go to exit function
 	
 	restart:
-		j main			# Restart input loop
+		j main				# Restart input loop
 	
 exit:
 						# Exit the program

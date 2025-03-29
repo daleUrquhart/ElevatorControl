@@ -1,5 +1,6 @@
 
 .data
+
     menu_msg:         .asciiz "1. Request a floor\n2. Engage emergency stop\n3. Move to next floor\n4. Sound the alarm\n5. Print queue\n6. Quit\nEnter your choice: "
     prompt_floor:     .asciiz "Enter the floor to request (0-5): "
     quit_msg:         .asciiz "Exiting program...\n"
@@ -38,7 +39,6 @@ main_loop:
     beq $t0, 4, sound_the_alarm
     beq $t0, 5, print_queue_status
     beq $t0, 6, quit_program
-    #jal print_queue_status
     # Invalid choice, loop again
     j main_loop
 
@@ -118,7 +118,6 @@ quit_program:
 # Print the current queue status
 # ===========================================
 print_queue_status:
-    li $t9, 0 # This represents how many floors we have printed so far
     # Print current floor
     li $v0, 4
     la $a0, curr_floor_msg
@@ -168,8 +167,7 @@ print_dir_done:
 
 print_queue_loop:
     beq $t0, $t1, print_done
-    addi $t9, $t9, 1 # Increment print count
-    
+
     mul $t4, $t0, 4
     add $t4, $t3, $t4
     lw $a0, 0($t4)
@@ -186,16 +184,8 @@ print_queue_loop:
     j print_queue_loop
 
 print_done:
-    beqz $t9, empty_q_printed
-    li $v0, 4
+    li $v0, 4		# Finish print function
     la $a0, newline
     syscall
     jr $ra
 
-empty_q_printed:
-    li $v0, 4
-    la $a0, empty_msg
-    syscall
-    la $a0, newline
-    syscall
-    jr $ra
