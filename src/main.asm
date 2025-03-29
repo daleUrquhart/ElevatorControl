@@ -5,7 +5,7 @@
     prompt_floor:     .asciiz "Enter the floor to request (0-5): "
     quit_msg:         .asciiz "Exiting program...\n"
     emergency_msg:    .asciiz "Emergency stop engaged!\n"
-
+    curr_dir_msg:  .asciiz " || Current elevator direction: "
     enq_msg:       .asciiz "Enqueueing floor: "
     deq_msg:       .asciiz "Dequeuing floor...\n"
     queue_state:   .asciiz "Queue state: "
@@ -216,6 +216,7 @@ print_done:
     syscall
     syscall
     j main_loop
+
 
 empty_queue_print:
     li $v0, 4		# Finish print function
