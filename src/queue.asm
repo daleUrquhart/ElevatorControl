@@ -21,6 +21,17 @@ enq:
     lw $t0, emergency_stop_val      	# Check if emergency stop is active 
     bnez $t0, stopped           
 
+    # Call is_present function to check if floor already exists in queue
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    jal is_present
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+
+    beqz $v0, continue_enq  # If not present, proceed with enqueue
+    jr $ra                 # If present, return immediately
+
+continue_enq:
     lw $t1, tail           
     lw $t2, size               
     lw $t3, head      
@@ -29,28 +40,30 @@ enq:
     rem $t8, $t8, $t2
     beq $t8, $t3, q_full        	# If next tail position equals head, queue is full
 
-    mul $t4, $t1, 4             	# Store floor request on new head index
+    mul $t4, $t1, 4             	# Store floor request on new tail index
     la $t5, queue               
     add $t5, $t5, $t4            
     sw $a0, 0($t5)             
     
     lw $t1, tail 
-    lw $t2, size 				# Now safely update the tail index before sorting
+    lw $t2, size 			# Update the tail index before sorting
     addi $t1, $t1, 1
     rem $t1, $t1, $t2
     sw $t1, tail
 
-    addi $sp, $sp, -4        # Save RA and check if Q is empty 
+    addi $sp, $sp, -4        		
     sw $ra, 0($sp)
-    jal optimize_queue			# Call look to sort the queue BEFORE updating tail 
+    jal optimize_queue			# Sort the Q after insertion
     lw $ra, 0($sp)		
     addi $sp, $sp, 4
-						# Handle direction after sorting
-    lw $t6, direction	
+						
+    lw $t6, direction			# Handle direction after sorting
     bnez $t6, skip_direction
     lw $t7, current_floor
     blt $t7, $a0, set_up
     bgt $t7, $a0, set_down
+
+
 
 #============================================================== BASIC FUNCTIONS ==============================================================
 # Dequeue Function (Process floor request)
@@ -142,10 +155,8 @@ q_print:
     addi $sp, $sp, -4        # Save RA and check if Q is empty 
     sw $ra, 0($sp)
     jal is_empty  
-           # Save RA and check if Q is empty 
-
-    
-    bnez $v0, q_empty  
+ 
+    bnez $v0, q_empty  		# Save RA and check if Q is empty 
     lw $ra, 0($sp)
     addi $sp, $sp, 4 
 
@@ -215,3 +226,33 @@ stopped:
     la $a0, stopped_msg
     syscall
     jr $ra
+    
+    
+# ============================================== PRESENT CHECK ====================================
+is_present:
+    lw $t1, head          # Load data
+    lw $t2, tail          
+    lw $t3, size          
+    la $t4, queue         
+
+check_loop:
+    beq $t1, $t2, not_found   
+
+    mul $t5, $t1, 4        # Get head
+    add $t6, $t4, $t5
+    lw $t7, 0($t6)         
+
+    beq $t7, $a0, found    # Match found
+
+    addi $t1, $t1, 1       # Increment head nad continue loop
+    rem $t1, $t1, $t3      
+    j check_loop           
+
+found:
+    li $v0, 1              # Load v0 with 1 for found
+    jr $ra
+
+not_found:
+    li $v0, 0              # Load v0 with 0 for not found
+    jr $ra
+

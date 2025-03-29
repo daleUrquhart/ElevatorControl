@@ -36,15 +36,20 @@ asc_inner_loop:
     add $t7, $t3, $t7
     lw $t8, 0($t7)
 
+    # If the new value is the same as the last inserted, skip
+    beq $t8, $t9, asc_inner_next
+
     bge $t5, $t8, asc_inner_next
 
     # Swap values
     sw $t8, 0($t4)
     sw $t5, 0($t7)
     move $t5, $t8
+    move $t9, $t8   # Update last inserted value
 
 asc_inner_next:
     j asc_inner_loop
+
 
 asc_outer_next:
     addi $t0, $t0, 1
@@ -77,15 +82,20 @@ desc_inner_loop:
     add $t7, $t3, $t7
     lw $t8, 0($t7)
 
+    # If the new value is the same as the last inserted, skip
+    beq $t8, $t9, desc_inner_next
+
     ble $t5, $t8, desc_inner_next
 
     # Swap values
     sw $t8, 0($t4)
     sw $t5, 0($t7)
     move $t5, $t8
+    move $t9, $t8   # Update last inserted value
 
 desc_inner_next:
     j desc_inner_loop
+
 
 # Move to next outer iteration
 desc_outer_next:
@@ -95,4 +105,4 @@ desc_outer_next:
 
 # Exit the sort function
 end_sort:
-    jr $ra
+    jr $ra 
